@@ -1,9 +1,9 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { motion, type Variants } from 'framer-motion';
 import React, { memo, type ReactNode } from 'react';
+import { IconButton } from './IconButton';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
-import { IconButton } from './IconButton';
 
 export { Close as DialogClose, Root as DialogRoot } from '@radix-ui/react-dialog';
 
@@ -44,13 +44,14 @@ interface DialogButtonProps {
   type: 'primary' | 'secondary' | 'danger';
   children: ReactNode;
   onClick?: (event: React.UIEvent) => void;
+  disabled?: boolean;
 }
 
-export const DialogButton = memo(({ type, children, onClick }: DialogButtonProps) => {
+export const DialogButton = memo(({ type, children, onClick, disabled = false }: DialogButtonProps) => {
   return (
     <button
       className={classNames(
-        'inline-flex h-[35px] items-center justify-center rounded-lg px-4 text-sm leading-none focus:outline-none',
+        'inline-flex h-[35px] items-center justify-center rounded-lg px-4 text-sm leading-none focus:outline-none disabled:opacity-50',
         {
           'bg-bolt-elements-button-primary-background text-bolt-elements-button-primary-text hover:bg-bolt-elements-button-primary-backgroundHover':
             type === 'primary',
@@ -61,6 +62,7 @@ export const DialogButton = memo(({ type, children, onClick }: DialogButtonProps
         },
       )}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>

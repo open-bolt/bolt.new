@@ -92,6 +92,62 @@ export const supportedLanguages = [
       return import('@codemirror/lang-cpp').then((module) => module.cpp());
     },
   }),
+  LanguageDescription.of({
+    name: 'Vue',
+    extensions: ['vue'],
+    async load() {
+      return import('@codemirror/lang-html').then((module) => module.html());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'Rust',
+    extensions: ['rs'],
+    async load() {
+      return import('@codemirror/lang-rust').then((module) => module.rust());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'Go',
+    extensions: ['go'],
+    async load() {
+      return import('@codemirror/lang-go').then((module) => module.go());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'PHP',
+    extensions: ['php'],
+    async load() {
+      return import('@codemirror/lang-php').then((module) => module.php());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'SQL',
+    extensions: ['sql'],
+    async load() {
+      return import('@codemirror/lang-sql').then((module) => module.sql());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'Java',
+    extensions: ['java'],
+    async load() {
+      return import('@codemirror/lang-java').then((module) => module.java());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'XML',
+    extensions: ['xml'],
+    async load() {
+      return import('@codemirror/lang-xml').then((module) => module.xml());
+    },
+  }),
+  LanguageDescription.of({
+    name: 'YAML',
+    extensions: ['yml', 'yaml'],
+    async load() {
+      return import('@codemirror/lang-yaml').then((module) => module.yaml());
+    },
+  }),
 ];
 
 export async function getLanguage(fileName: string) {

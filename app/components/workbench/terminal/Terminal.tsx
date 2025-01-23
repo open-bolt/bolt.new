@@ -2,9 +2,9 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
+import { getTerminalTheme } from './theme';
 import type { Theme } from '~/lib/stores/theme';
 import { createScopedLogger } from '~/utils/logger';
-import { getTerminalTheme } from './theme';
 
 const logger = createScopedLogger('Terminal');
 
@@ -23,7 +23,7 @@ export interface TerminalProps {
 export const Terminal = memo(
   forwardRef<TerminalRef, TerminalProps>(({ className, theme, readonly, onTerminalReady, onTerminalResize }, ref) => {
     const terminalElementRef = useRef<HTMLDivElement>(null);
-    const terminalRef = useRef<XTerm>();
+    const terminalRef = useRef<XTerm | null>(null);
 
     useEffect(() => {
       const element = terminalElementRef.current!;

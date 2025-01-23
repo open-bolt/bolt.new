@@ -1,6 +1,7 @@
+import type { ComponentProps, ComponentType } from 'react';
 import { memo } from 'react';
 
-export const genericMemo: <T extends keyof JSX.IntrinsicElements | React.JSXElementConstructor<any>>(
-  component: T,
-  propsAreEqual?: (prevProps: React.ComponentProps<T>, nextProps: React.ComponentProps<T>) => boolean,
-) => T & { displayName?: string } = memo;
+export const genericMemo: <T extends ComponentType<any>>(
+  Component: T,
+  propsAreEqual?: (prevProps: ComponentProps<T>, nextProps: ComponentProps<T>) => boolean,
+) => T = memo;

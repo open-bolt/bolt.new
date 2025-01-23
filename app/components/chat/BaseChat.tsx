@@ -1,17 +1,21 @@
 import type { Message } from 'ai';
 import React, { type RefCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
+import styles from './BaseChat.module.scss';
+import { ChatHistory } from './ChatHistory.client';
+import FilePreview from './FilePreview';
+import GitCloneButton from './GitCloneButton';
+import { ImportFolderButton } from './ImportFolderButton';
+import { Messages } from './Messages.client';
+import { SendButton } from './SendButton.client';
+import StarterTemplates from './StarterTemplates';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
-import { Messages } from './Messages.client';
-import { SendButton } from './SendButton.client';
-
-import styles from './BaseChat.module.scss';
 
 interface BaseChatProps {
-  textareaRef?: React.RefObject<HTMLTextAreaElement> | undefined;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null> | undefined;
   messageRef?: RefCallback<HTMLDivElement> | undefined;
   scrollRef?: RefCallback<HTMLDivElement> | undefined;
   showChat?: boolean;
@@ -21,16 +25,20 @@ interface BaseChatProps {
   enhancingPrompt?: boolean;
   promptEnhanced?: boolean;
   input?: string;
+  files?: File[];
+  imageDataList?: string[];
   handleStop?: () => void;
   sendMessage?: (event: React.UIEvent, messageInput?: string) => void;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
+  onFileUpload?: (files: FileList) => void;
+  onRemoveFile?: (index: number) => void;
 }
 
 const EXAMPLE_PROMPTS = [
   { text: 'Build a todo app in React using Tailwind' },
   { text: 'Build a simple blog using Astro' },
-  { text: 'Create a cookie consent form using Material UI' },
+  { text: 'Make a login form using React' },
   { text: 'Make a space invaders game' },
   { text: 'How do I center a div?' },
 ];
@@ -54,6 +62,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       handleInputChange,
       enhancePrompt,
       handleStop,
+      files,
+      imageDataList,
+      onFileUpload,
+      onRemoveFile,
     },
     ref,
   ) => {
@@ -72,7 +84,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
-              <div id="intro" className="mt-[26vh] max-w-chat mx-auto">
+              <div id="intro" className="mt-[10vh] max-w-chat mx-auto">
                 <h1 className="text-5xl text-center font-bold text-bolt-elements-textPrimary mb-2">
                   Where ideas begin
                 </h1>
@@ -173,6 +185,21 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           </>
                         )}
                       </IconButton>
+                      <input
+                        type="file"
+                        id="image-upload"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => onFileUpload?.(e.target.files!)}
+                      />
+                      <IconButton
+                        title="Upload images"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                      >
+                        <div className="i-ph:image text-xl" />
+                      </IconButton>
+                      <ClientOnly>{() => <ChatHistory />}</ClientOnly>
                     </div>
                     {input.length > 3 ? (
                       <div className="text-xs text-bolt-elements-textTertiary">
@@ -180,27 +207,64 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       </div>
                     ) : null}
                   </div>
+                  {files && files.length > 0 && (
+                    <div className="px-4 pb-4">
+                      <FilePreview
+                        files={files}
+                        imageDataList={imageDataList || []}
+                        onRemove={
+                          onRemoveFile ||
+                          function noop() {
+                            /* no-op */
+                          }
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
               </div>
             </div>
             {!chatStarted && (
-              <div id="examples" className="relative w-full max-w-xl mx-auto mt-8 flex justify-center">
-                <div className="flex flex-col space-y-2 [mask-image:linear-gradient(to_bottom,black_0%,transparent_180%)] hover:[mask-image:none]">
-                  {EXAMPLE_PROMPTS.map((examplePrompt, index) => {
-                    return (
-                      <button
-                        key={index}
-                        onClick={(event) => {
-                          sendMessage?.(event, examplePrompt.text);
-                        }}
-                        className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme"
-                      >
-                        {examplePrompt.text}
-                        <div className="i-ph:arrow-bend-down-left" />
-                      </button>
-                    );
-                  })}
+              <div id="examples" className="relative w-full max-w-4xl mx-auto mt-8 flex flex-col items-center px-4">
+                <div className="flex gap-4 mb-8">
+                  <GitCloneButton
+                    importChat={async (description, messages) => {
+                      sendMessage?.(new Event('click') as any, description);
+                      messages.forEach((message) => {
+                        sendMessage?.(new Event('click') as any, message.content);
+                      });
+                    }}
+                  />
+                  <ImportFolderButton
+                    importChat={async (description, messages) => {
+                      sendMessage?.(new Event('click') as any, description);
+                      messages.forEach((message) => {
+                        sendMessage?.(new Event('click') as any, message.content);
+                      });
+                    }}
+                  />
+                </div>
+                <div className="text-center mb-4 text-bolt-elements-textSecondary">
+                  or start a blank app with your favorite stack
+                </div>
+                <div className="flex flex-col space-y-2 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+                    {EXAMPLE_PROMPTS.map((examplePrompt, index) => {
+                      return (
+                        <button
+                          key={index}
+                          onClick={(event) => {
+                            sendMessage?.(event, examplePrompt.text);
+                          }}
+                          className="group flex items-center justify-center px-3 py-2 rounded-full bg-[#1A1A1A] hover:bg-[#252525] text-sm text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-all duration-200"
+                        >
+                          <span>{examplePrompt.text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <StarterTemplates />
                 </div>
               </div>
             )}

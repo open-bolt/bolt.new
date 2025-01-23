@@ -1,9 +1,8 @@
 import { memo, useEffect, useState } from 'react';
 import { bundledLanguages, codeToHtml, isSpecialLang, type BundledLanguage, type SpecialLanguage } from 'shiki';
+import styles from './CodeBlock.module.scss';
 import { classNames } from '~/utils/classNames';
 import { createScopedLogger } from '~/utils/logger';
-
-import styles from './CodeBlock.module.scss';
 
 const logger = createScopedLogger('CodeBlock');
 
@@ -46,7 +45,7 @@ export const CodeBlock = memo(
       };
 
       processCode();
-    }, [code]);
+    }, [code, language, theme]);
 
     return (
       <div className={classNames('relative group text-left', className)}>

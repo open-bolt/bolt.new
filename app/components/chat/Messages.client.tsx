@@ -1,8 +1,8 @@
 import type { Message } from 'ai';
 import React from 'react';
-import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
+import { classNames } from '~/utils/classNames';
 
 interface MessagesProps {
   id?: string;
@@ -25,7 +25,7 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
 
             return (
               <div
-                key={index}
+                key={message.id || `message-${index}`}
                 className={classNames('flex gap-4 p-6 w-full rounded-[calc(0.75rem-1px)]', {
                   'bg-bolt-elements-messages-background': isUserMessage || !isStreaming || (isStreaming && !isLast),
                   'bg-gradient-to-b from-bolt-elements-messages-background from-30% to-transparent':

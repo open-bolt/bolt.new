@@ -1,8 +1,14 @@
 import { useStore } from '@nanostores/react';
+import { saveAs } from 'file-saver';
 import { motion, type HTMLMotionProps, type Variants } from 'framer-motion';
+import JSZip from 'jszip';
 import { computed } from 'nanostores';
-import { memo, useCallback, useEffect } from 'react';
+import React from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { EditorPanel } from './EditorPanel';
+import { GitHubPushModal } from './GitHubPushModal';
+import { Preview } from './Preview';
 import {
   type OnChangeCallback as OnEditorChange,
   type OnScrollCallback as OnEditorScroll,
@@ -14,8 +20,6 @@ import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { renderLogger } from '~/utils/logger';
-import { EditorPanel } from './EditorPanel';
-import { Preview } from './Preview';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -62,6 +66,61 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   const unsavedFiles = useStore(workbenchStore.unsavedFiles);
   const files = useStore(workbenchStore.files);
   const selectedView = useStore(workbenchStore.currentView);
+  const [showGitHubModal, setShowGitHubModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncFiles = useCallback(async () => {
+    setIsSyncing(true);
+
+    try {
+      if ('showDirectoryPicker' in window) {
+        const directoryHandle = await window.showDirectoryPicker();
+        await workbenchStore.syncFiles(directoryHandle);
+        toast.success('Files synced successfully');
+      } else {
+        // fallback to download as zip
+        await downloadZip();
+        toast.info(
+          'Your browser does not support the File System Access API. Files have been downloaded as a zip instead.',
+        );
+      }
+    } catch (error) {
+      console.error('Error syncing files:', error);
+      toast.error('Failed to sync files');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  const downloadZip = async () => {
+    const zip = new JSZip();
+
+    for (const [filePath, dirent] of Object.entries(files)) {
+      if (dirent?.type === 'file' && !dirent.isBinary) {
+        // remove '/home/project/' from the beginning of the path
+        const relativePath = filePath.replace(/^\/home\/project\//, '');
+
+        // split the path into segments
+        const pathSegments = relativePath.split('/');
+
+        // if there's more than one segment, we need to create folders
+        if (pathSegments.length > 1) {
+          let currentFolder = zip;
+
+          for (let i = 0; i < pathSegments.length - 1; i++) {
+            currentFolder = currentFolder.folder(pathSegments[i])!;
+          }
+          currentFolder.file(pathSegments[pathSegments.length - 1], dirent.content);
+        } else {
+          // if there's only one segment, it's a file in the root
+          zip.file(relativePath, dirent.content);
+        }
+      }
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'project.zip');
+  };
 
   const setSelectedView = (view: WorkbenchViewType) => {
     workbenchStore.currentView.set(view);
@@ -122,15 +181,29 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                 <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
                 <div className="ml-auto" />
                 {selectedView === 'code' && (
-                  <PanelHeaderButton
-                    className="mr-1 text-sm"
-                    onClick={() => {
-                      workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
-                    }}
-                  >
-                    <div className="i-ph:terminal" />
-                    Toggle Terminal
-                  </PanelHeaderButton>
+                  <>
+                    <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
+                      {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
+                      {isSyncing ? 'Syncing...' : 'Sync Files'}
+                    </PanelHeaderButton>
+                    <PanelHeaderButton className="mr-1 text-sm" onClick={downloadZip}>
+                      <div className="i-ph:download-bold" />
+                      Download
+                    </PanelHeaderButton>
+                    <PanelHeaderButton className="mr-1 text-sm" onClick={() => setShowGitHubModal(true)}>
+                      <div className="i-ph:github-logo-bold" />
+                      Push to GitHub
+                    </PanelHeaderButton>
+                    <PanelHeaderButton
+                      className="mr-1 text-sm"
+                      onClick={() => {
+                        workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
+                      }}
+                    >
+                      <div className="i-ph:terminal" />
+                      Toggle Terminal
+                    </PanelHeaderButton>
+                  </>
                 )}
                 <IconButton
                   icon="i-ph:x-circle"
@@ -169,13 +242,14 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             </div>
           </div>
         </div>
+        <GitHubPushModal isOpen={showGitHubModal} onClose={() => setShowGitHubModal(false)} />
       </motion.div>
     )
   );
 });
 
 interface ViewProps extends HTMLMotionProps<'div'> {
-  children: JSX.Element;
+  children: React.ReactElement;
 }
 
 const View = memo(({ children, ...props }: ViewProps) => {

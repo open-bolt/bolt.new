@@ -1,8 +1,8 @@
-import { streamText as _streamText, convertToCoreMessages } from 'ai';
-import { getAPIKey } from '~/lib/.server/llm/api-key';
-import { getAnthropicModel } from '~/lib/.server/llm/model';
+import { streamText as _streamText } from 'ai';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
+import { getAPIKey } from '~/lib/.server/llm/api-key';
+import { getAnthropicModel } from '~/lib/.server/llm/model';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -29,7 +29,7 @@ export function streamText(messages: Messages, env: Env, options?: StreamingOpti
     headers: {
       'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15',
     },
-    messages: convertToCoreMessages(messages),
+    messages,
     ...options,
   });
 }

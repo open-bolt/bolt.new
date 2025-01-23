@@ -12,7 +12,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const canHideChat = showWorkbench || !showChat;
 
   return (
-    <div className="flex">
+    <div className="flex gap-2">
       <div className="flex border border-bolt-elements-borderColor rounded-md overflow-hidden">
         <Button
           active={showChat}
@@ -23,7 +23,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
             }
           }}
         >
-          <div className="i-bolt:chat text-sm" />
+          <div className="i-ph:chat-circle text-sm" />
         </Button>
         <div className="w-[1px] bg-bolt-elements-borderColor" />
         <Button
@@ -46,7 +46,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
 interface ButtonProps {
   active?: boolean;
   disabled?: boolean;
-  children?: any;
+  children?: React.ReactNode;
   onClick?: VoidFunction;
 }
 

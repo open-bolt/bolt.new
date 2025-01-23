@@ -1,6 +1,9 @@
 import { useStore } from '@nanostores/react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
+import { FileBreadcrumb } from './FileBreadcrumb';
+import { FileTree } from './FileTree';
+import { Terminal, type TerminalRef } from './terminal/Terminal';
 import {
   CodeMirrorEditor,
   type EditorDocument,
@@ -20,9 +23,6 @@ import { classNames } from '~/utils/classNames';
 import { WORK_DIR } from '~/utils/constants';
 import { renderLogger } from '~/utils/logger';
 import { isMobile } from '~/utils/mobile';
-import { FileBreadcrumb } from './FileBreadcrumb';
-import { FileTree } from './FileTree';
-import { Terminal, type TerminalRef } from './terminal/Terminal';
 
 interface EditorPanelProps {
   files?: FileMap;
@@ -60,8 +60,9 @@ export const EditorPanel = memo(
 
     const theme = useStore(themeStore);
     const showTerminal = useStore(workbenchStore.showTerminal);
+    const showBoltTerminal = useStore(workbenchStore.showBoltTerminal);
 
-    const terminalRefs = useRef<Array<TerminalRef | null>>([]);
+    const terminalRefs = useRef<(TerminalRef | null)[]>([]);
     const terminalPanelRef = useRef<ImperativePanelHandle>(null);
     const terminalToggledByShortcut = useRef(false);
 
@@ -105,15 +106,16 @@ export const EditorPanel = memo(
       }
 
       const isCollapsed = terminal.isCollapsed();
+      const shouldShowTerminal = showTerminal || showBoltTerminal;
 
-      if (!showTerminal && !isCollapsed) {
+      if (!shouldShowTerminal && !isCollapsed) {
         terminal.collapse();
-      } else if (showTerminal && isCollapsed) {
+      } else if (shouldShowTerminal && isCollapsed) {
         terminal.resize(DEFAULT_TERMINAL_SIZE);
       }
 
       terminalToggledByShortcut.current = false;
-    }, [showTerminal]);
+    }, [showTerminal, showBoltTerminal]);
 
     const addTerminal = () => {
       if (terminalCount < MAX_TERMINALS) {
@@ -124,7 +126,7 @@ export const EditorPanel = memo(
 
     return (
       <PanelGroup direction="vertical">
-        <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
+        <Panel defaultSize={showTerminal || showBoltTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
           <PanelGroup direction="horizontal">
             <Panel defaultSize={20} minSize={10} collapsible>
               <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
@@ -182,25 +184,38 @@ export const EditorPanel = memo(
         <PanelResizeHandle />
         <Panel
           ref={terminalPanelRef}
-          defaultSize={showTerminal ? DEFAULT_TERMINAL_SIZE : 0}
+          defaultSize={DEFAULT_TERMINAL_SIZE}
           minSize={10}
           collapsible
-          onExpand={() => {
-            if (!terminalToggledByShortcut.current) {
-              workbenchStore.toggleTerminal(true);
-            }
-          }}
           onCollapse={() => {
             if (!terminalToggledByShortcut.current) {
               workbenchStore.toggleTerminal(false);
+              workbenchStore.toggleBoltTerminal(false);
             }
           }}
         >
           <div className="h-full">
             <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
               <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1.5 min-h-[34px] p-2">
+                <button
+                  className={classNames(
+                    'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
+                    {
+                      'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': showBoltTerminal,
+                      'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
+                        !showBoltTerminal,
+                    },
+                  )}
+                  onClick={() => {
+                    workbenchStore.toggleBoltTerminal(true);
+                    workbenchStore.toggleTerminal(false);
+                  }}
+                >
+                  <div className="i-ph:lightning-duotone text-lg" />
+                  Bolt Terminal
+                </button>
                 {Array.from({ length: terminalCount }, (_, index) => {
-                  const isActive = activeTerminal === index;
+                  const isActive = !showBoltTerminal && activeTerminal === index;
 
                   return (
                     <button
@@ -213,7 +228,11 @@ export const EditorPanel = memo(
                             !isActive,
                         },
                       )}
-                      onClick={() => setActiveTerminal(index)}
+                      onClick={() => {
+                        setActiveTerminal(index);
+                        workbenchStore.toggleBoltTerminal(false);
+                        workbenchStore.toggleTerminal(true);
+                      }}
                     >
                       <div className="i-ph:terminal-window-duotone text-lg" />
                       Terminal {terminalCount > 1 && index + 1}
@@ -226,11 +245,23 @@ export const EditorPanel = memo(
                   icon="i-ph:caret-down"
                   title="Close"
                   size="md"
-                  onClick={() => workbenchStore.toggleTerminal(false)}
+                  onClick={() => {
+                    workbenchStore.toggleTerminal(false);
+                    workbenchStore.toggleBoltTerminal(false);
+                  }}
                 />
               </div>
+              <Terminal
+                className={classNames('h-full overflow-hidden', {
+                  hidden: !showBoltTerminal,
+                })}
+                readonly={true}
+                onTerminalReady={(terminal) => workbenchStore.attachBoltTerminal(terminal)}
+                onTerminalResize={(cols, rows) => workbenchStore.onBoltTerminalResize(cols, rows)}
+                theme={theme}
+              />
               {Array.from({ length: terminalCount }, (_, index) => {
-                const isActive = activeTerminal === index;
+                const isActive = !showBoltTerminal && activeTerminal === index;
 
                 return (
                   <Terminal
@@ -239,7 +270,7 @@ export const EditorPanel = memo(
                       hidden: !isActive,
                     })}
                     ref={(ref) => {
-                      terminalRefs.current.push(ref);
+                      terminalRefs.current[index] = ref;
                     }}
                     onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
                     onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}

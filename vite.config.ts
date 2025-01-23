@@ -10,6 +10,11 @@ export default defineConfig((config) => {
     build: {
       target: 'esnext',
     },
+    server: {
+      host: '0.0.0.0',
+      strictPort: true,
+      port: 5173,
+    },
     plugins: [
       nodePolyfills({
         include: ['path', 'buffer'],
@@ -20,6 +25,7 @@ export default defineConfig((config) => {
           v3_fetcherPersist: true,
           v3_relativeSplatPath: true,
           v3_throwAbortReason: true,
+          v3_lazyRouteDiscovery: true,
         },
       }),
       UnoCSS(),

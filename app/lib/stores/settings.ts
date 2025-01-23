@@ -13,6 +13,7 @@ export interface Shortcut {
 
 export interface Shortcuts {
   toggleTerminal: Shortcut;
+  toggleBoltTerminal: Shortcut;
 }
 
 export interface Settings {
@@ -24,6 +25,11 @@ export const shortcutsStore = map<Shortcuts>({
     key: 'j',
     ctrlOrMetaKey: true,
     action: () => workbenchStore.toggleTerminal(),
+  },
+  toggleBoltTerminal: {
+    key: 'k',
+    ctrlOrMetaKey: true,
+    action: () => workbenchStore.toggleBoltTerminal(),
   },
 });
 

@@ -1,10 +1,11 @@
+import * as nodePath from 'node:path';
 import { WebContainer } from '@webcontainer/api';
 import { map, type MapStore } from 'nanostores';
-import * as nodePath from 'node:path';
+import type { ActionCallbackData } from './message-parser';
+import { workbenchStore } from '~/lib/stores/workbench';
 import type { BoltAction } from '~/types/actions';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
-import type { ActionCallbackData } from './message-parser';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -128,18 +129,23 @@ export class ActionRunner {
 
     const webcontainer = await this.#webcontainer;
 
+    // write the command to the Bolt terminal
+    workbenchStore.writeToBoltTerminal(`\x1b[1;34m$ ${action.content}\x1b[0m\n`);
+
     const process = await webcontainer.spawn('jsh', ['-c', action.content], {
       env: { npm_config_yes: true },
     });
 
     action.abortSignal.addEventListener('abort', () => {
       process.kill();
+      workbenchStore.writeToBoltTerminal('\x1b[1;31mCommand aborted\x1b[0m\n');
     });
 
     process.output.pipeTo(
       new WritableStream({
         write(data) {
           console.log(data);
+          workbenchStore.writeToBoltTerminal(data);
         },
       }),
     );
@@ -147,6 +153,9 @@ export class ActionRunner {
     const exitCode = await process.exit;
 
     logger.debug(`Process terminated with code ${exitCode}`);
+    workbenchStore.writeToBoltTerminal(
+      `\x1b[1;${exitCode === 0 ? '32' : '31'}mProcess exited with code ${exitCode}\x1b[0m\n\n`,
+    );
   }
 
   async #runFileAction(action: ActionState) {
@@ -161,20 +170,27 @@ export class ActionRunner {
     // remove trailing slashes
     folder = folder.replace(/\/+$/g, '');
 
+    // write file creation to Bolt terminal
+    workbenchStore.writeToBoltTerminal(`\x1b[1;34mCreating file: ${action.filePath}\x1b[0m\n`);
+
     if (folder !== '.') {
       try {
         await webcontainer.fs.mkdir(folder, { recursive: true });
         logger.debug('Created folder', folder);
+        workbenchStore.writeToBoltTerminal(`\x1b[1;32mCreated folder: ${folder}\x1b[0m\n`);
       } catch (error) {
         logger.error('Failed to create folder\n\n', error);
+        workbenchStore.writeToBoltTerminal(`\x1b[1;31mFailed to create folder: ${folder}\x1b[0m\n${error}\n`);
       }
     }
 
     try {
       await webcontainer.fs.writeFile(action.filePath, action.content);
       logger.debug(`File written ${action.filePath}`);
+      workbenchStore.writeToBoltTerminal(`\x1b[1;32mFile created: ${action.filePath}\x1b[0m\n\n`);
     } catch (error) {
       logger.error('Failed to write file\n\n', error);
+      workbenchStore.writeToBoltTerminal(`\x1b[1;31mFailed to write file: ${action.filePath}\x1b[0m\n${error}\n\n`);
     }
   }
 

@@ -2,9 +2,9 @@ import { useRef, useCallback } from 'react';
 
 export function useSnapScroll() {
   const autoScrollRef = useRef(true);
-  const scrollNodeRef = useRef<HTMLDivElement>();
-  const onScrollRef = useRef<() => void>();
-  const observerRef = useRef<ResizeObserver>();
+  const scrollNodeRef = useRef<HTMLDivElement | null>(null);
+  const onScrollRef = useRef<(() => void) | null>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
 
   const messageRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
@@ -22,7 +22,7 @@ export function useSnapScroll() {
       observer.observe(node);
     } else {
       observerRef.current?.disconnect();
-      observerRef.current = undefined;
+      observerRef.current = null;
     }
   }, []);
 
@@ -43,8 +43,8 @@ export function useSnapScroll() {
         scrollNodeRef.current?.removeEventListener('scroll', onScrollRef.current);
       }
 
-      scrollNodeRef.current = undefined;
-      onScrollRef.current = undefined;
+      scrollNodeRef.current = null;
+      onScrollRef.current = null;
     }
   }, []);
 

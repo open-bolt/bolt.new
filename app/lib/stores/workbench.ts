@@ -1,14 +1,15 @@
 import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from 'nanostores';
+import { BoltTerminalStore } from './bolt-terminal';
+import { EditorStore } from './editor';
+import { FilesStore, type FileMap } from './files';
+import { PreviewsStore } from './previews';
+import { TerminalStore } from './terminal';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
 import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
-import { EditorStore } from './editor';
-import { FilesStore, type FileMap } from './files';
-import { PreviewsStore } from './previews';
-import { TerminalStore } from './terminal';
 
 export interface ArtifactState {
   id: string;
@@ -28,6 +29,7 @@ export class WorkbenchStore {
   #filesStore = new FilesStore(webcontainer);
   #editorStore = new EditorStore(this.#filesStore);
   #terminalStore = new TerminalStore(webcontainer);
+  #boltTerminalStore = new BoltTerminalStore(webcontainer);
 
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
 
@@ -84,6 +86,26 @@ export class WorkbenchStore {
 
   onTerminalResize(cols: number, rows: number) {
     this.#terminalStore.onTerminalResize(cols, rows);
+  }
+
+  get showBoltTerminal() {
+    return this.#boltTerminalStore.showBoltTerminal;
+  }
+
+  toggleBoltTerminal(value?: boolean) {
+    this.#boltTerminalStore.toggleBoltTerminal(value);
+  }
+
+  attachBoltTerminal(terminal: ITerminal) {
+    this.#boltTerminalStore.attachTerminal(terminal);
+  }
+
+  onBoltTerminalResize(cols: number, rows: number) {
+    this.#boltTerminalStore.onTerminalResize(cols, rows);
+  }
+
+  writeToBoltTerminal(data: string) {
+    this.#boltTerminalStore.writeToTerminal(data);
   }
 
   setDocuments(files: FileMap) {
@@ -256,15 +278,42 @@ export class WorkbenchStore {
   }
 
   async runAction(data: ActionCallbackData) {
-    const { messageId } = data;
-
-    const artifact = this.#getArtifact(messageId);
+    const artifact = this.artifacts.get()[data.messageId];
 
     if (!artifact) {
-      unreachable('Artifact not found');
+      return;
     }
 
-    artifact.runner.runAction(data);
+    await artifact.runner.runAction(data);
+  }
+
+  async syncFiles(targetHandle: FileSystemDirectoryHandle) {
+    const files = this.files.get();
+    const syncedFiles = [];
+
+    for (const [filePath, dirent] of Object.entries(files)) {
+      if (dirent?.type === 'file' && !dirent.isBinary) {
+        const relativePath = filePath.replace(/^\/home\/project\//, '');
+        const pathSegments = relativePath.split('/');
+        let currentHandle = targetHandle;
+
+        for (let i = 0; i < pathSegments.length - 1; i++) {
+          currentHandle = await currentHandle.getDirectoryHandle(pathSegments[i], { create: true });
+        }
+
+        // create or get the file
+        const fileHandle = await currentHandle.getFileHandle(pathSegments[pathSegments.length - 1], { create: true });
+
+        // write the file content
+        const writable = await fileHandle.createWritable();
+        await writable.write(dirent.content);
+        await writable.close();
+
+        syncedFiles.push(relativePath);
+      }
+    }
+
+    return syncedFiles;
   }
 
   #getArtifact(id: string) {

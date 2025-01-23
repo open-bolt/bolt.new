@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+import React from 'react';
 import { memo } from 'react';
 import { classNames } from '~/utils/classNames';
 
@@ -20,7 +22,7 @@ type IconButtonWithoutChildrenProps = {
 
 type IconButtonWithChildrenProps = {
   icon?: undefined;
-  children: string | JSX.Element | JSX.Element[];
+  children: string | ReactElement | ReactElement[];
 } & BaseIconButtonProps;
 
 type IconButtonProps = IconButtonWithoutChildrenProps | IconButtonWithChildrenProps;
@@ -40,7 +42,7 @@ export const IconButton = memo(
     return (
       <button
         className={classNames(
-          'flex items-center text-bolt-elements-item-contentDefault bg-transparent enabled:hover:text-bolt-elements-item-contentActive rounded-md p-1 enabled:hover:bg-bolt-elements-item-backgroundActive disabled:cursor-not-allowed',
+          'flex items-center justify-center p-1.5 text-bolt-elements-item-contentActive bg-bolt-elements-item-backgroundActive rounded-md hover:bg-bolt-elements-item-backgroundHover transition-colors',
           {
             [classNames('opacity-30', disabledClassName)]: disabled,
           },
@@ -56,22 +58,31 @@ export const IconButton = memo(
           onClick?.(event);
         }}
       >
-        {children ? children : <div className={classNames(icon, getIconSize(size), iconClassName)}></div>}
+        {children ? children : <div className={classNames(icon, getIconSize(size), 'scale-125', iconClassName)}></div>}
       </button>
     );
   },
 );
 
 function getIconSize(size: IconSize) {
-  if (size === 'sm') {
-    return 'text-sm';
-  } else if (size === 'md') {
-    return 'text-md';
-  } else if (size === 'lg') {
-    return 'text-lg';
-  } else if (size === 'xl') {
-    return 'text-xl';
-  } else {
-    return 'text-2xl';
+  switch (size) {
+    case 'sm': {
+      return 'text-sm';
+    }
+    case 'md': {
+      return 'text-base';
+    }
+    case 'lg': {
+      return 'text-lg';
+    }
+    case 'xl': {
+      return 'text-xl';
+    }
+    case 'xxl': {
+      return 'text-2xl';
+    }
+    default: {
+      return 'text-base';
+    }
   }
 }
