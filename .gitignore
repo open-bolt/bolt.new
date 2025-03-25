@@ -1,3 +1,4 @@
+node_modules
 logs
 *.log
 npm-debug.log*
@@ -25,6 +26,7 @@ dist-ssr
 /.cache
 /build
 .env*
+!.env.example
 *.vars
 .wrangler
 _worker.bundle

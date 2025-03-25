@@ -1,0 +1,40 @@
+---
+description: these rules apply only to code files.
+globs: **/*.tsx, **/*.ts, src/**/*.ts, src/**/*.tsx
+alwaysApply: true
+---
+
+## **Code-Specific Cursor Rules**
+These rules apply only to code files.
+
+### **Code Review**
+- Check for type safety.  
+- Verify error handling.  
+- Ensure code follows project patterns.  
+- Look for performance implications.  
+- Validate accessibility standards.  
+
+### **Code Refactoring**
+- Maintain backward compatibility.  
+- Update tests alongside changes.  
+- Document breaking changes.  
+- Follow the project's type system.  
+- Keep components modular and reusable.  
+
+### **Code Quality & Clean Code Guidelines**
+- **Verify Information:** No assumptions—verify all information before presenting it.  
+- **Meaningful Changes:** Make changes file by file, provide all edits in one chunk.  
+- **Code Readability:** Use meaningful names, replace hard-coded values with constants, and maintain structure.  
+- **Smart Comments:** Explain *why*, not *what*. Document APIs, complex algorithms, and side effects.  
+- **Maintainability & Best Practices:** Follow SRP, DRY, and encapsulation principles. Continuously refactor.  
+
+### **Testing & Version Control**
+- Write tests before fixing bugs, covering edge cases.  
+- Keep tests readable and maintainable.  
+- Use clear commit messages, small focused commits, and meaningful branch names.  
+
+### **Interaction & Process**
+- No apologies.  
+- No summaries of changes made.  
+- No unnecessary confirmations.  
+- Always provide real file links, not placeholders.

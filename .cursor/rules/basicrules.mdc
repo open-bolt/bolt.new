@@ -1,0 +1,41 @@
+---
+description: these rules apply universally across all files.
+alwaysApply: true
+---
+
+## **General Cursor Rules**
+These rules apply universally across all files.
+
+### **Techstack**
+- Framework: Remix  
+- Runtime: Node.js (>=18.18.0)  
+- Package Manager: pnpm  
+- UI: React with TypeScript  
+- Styling: UnoCSS  
+- Development Environment: Vite  
+- Testing: Vitest  
+- Deployment: Cloudflare Pages  
+- Containerization: Docker  
+- Code Quality: ESLint, Prettier, TypeScript  
+
+### **Error Fixing Process**
+1. Identify the root cause through error messages and logs.  
+2. Check relevant components and dependencies.  
+3. Verify type safety and TypeScript compliance.  
+4. Test changes locally before committing.  
+5. Follow existing error-handling patterns.  
+
+### **File Structure**
+- `/app` - Main application code  
+- `/docs` - Documentation  
+- `/functions` - Serverless functions  
+- `/public` - Static assets  
+- `/types` - TypeScript definitions  
+- `/icons` - SVG icons and assets  
+
+### **General Guidelines**
+- Keep dependencies updated.  
+- Follow TypeScript strict mode.  
+- Maintain backward compatibility.  
+- Document API changes.  
+- Test cross-browser compatibility. 
