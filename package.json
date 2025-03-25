@@ -23,7 +23,7 @@
     "node": ">=18.18.0"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.39",
+    "@ai-sdk/anthropic": "^1.2.1",
     "@codemirror/autocomplete": "^6.17.0",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/lang-cpp": "^6.0.2",
