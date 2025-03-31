@@ -57,7 +57,7 @@
     "ai": "^3.4.33",
     "date-fns": "^3.6.0",
     "diff": "^5.2.0",
-    "framer-motion": "^11.18.2",
+    "framer-motion": "^12.6.2",
     "isbot": "^4.4.0",
     "istextorbinary": "^9.5.0",
     "jose": "^5.10.0",
